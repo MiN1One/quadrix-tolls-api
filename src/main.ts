@@ -4,10 +4,7 @@ import { NestFactory } from '@nestjs/core';
 import { appConfig } from './app.config';
 import { AppModule } from './app.module';
 
-const allowedOrigins = [
-  'https://app.quadrix.ai',
-  'http://localhost:5173',
-];
+const allowedOrigins = ['https://app.quadrix.ai', 'http://localhost:5173'];
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
@@ -25,6 +22,9 @@ async function bootstrap() {
       methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     },
   });
+
+  app.getHttpAdapter().getInstance().set('trust proxy', 1);
+  app.setGlobalPrefix('custom-route');
 
   app.useGlobalPipes(new ValidationPipe());
 
