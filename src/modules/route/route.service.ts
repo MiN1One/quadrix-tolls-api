@@ -52,10 +52,17 @@ export class RouteService {
         },
       );
 
+      const totalToll =
+        route.costs.expressLanes?.tagCost || route.costs.prepaidCard || null;
+      const licensePlateToll =
+        route.costs.expressLanes?.licensePlateCost ||
+        route.costs.licensePlate ||
+        null;
+
       return {
         currency: route.costs.currency,
-        totalToll: route.costs.expressLanes?.tagCost || null,
-        licensePlateToll: route.costs.expressLanes?.licensePlateCost || null,
+        totalToll,
+        licensePlateToll,
         fuelExpense: route.costs.fuel,
       };
     } catch (error) {
