@@ -14,6 +14,8 @@ import {
   IFetchRouteResponse,
   IRoutePoint,
   ITollApiResponse,
+  ITollDetails,
+  TollType,
 } from 'src/types/route.types';
 import { buildCanonicalRouteHash, normalizePoints } from 'src/utils/route';
 import { GetRouteDto } from './dto/get-route.dto';
@@ -64,6 +66,7 @@ export class RouteService {
         totalToll,
         licensePlateToll,
         fuelExpense: route.costs.fuel,
+        tolls: this.mapRouteTollDetails(route.tolls),
       };
     } catch (error) {
       if (axios.isAxiosError(error)) {
@@ -203,6 +206,31 @@ export class RouteService {
         JSON.stringify(er),
       );
     }
+  }
+
+  private mapRouteTollDetails(tolls: TollType[]): ITollDetails[] {
+    return tolls.flatMap<ITollDetails>((toll) => {
+      const tollDetails = {
+        type: toll.type,
+        price: toll.tagCost || toll.prepaidCardCost || 0,
+        currency: toll.currency,
+      };
+      if ('start' in toll && 'end' in toll) {
+        return [
+          { ...tollDetails, lng: toll.start.lng, lat: toll.start.lat },
+          {
+            ...tollDetails,
+            lng: toll.end.lng,
+            lat: toll.end.lat,
+          },
+        ];
+      }
+      return {
+        ...tollDetails,
+        lng: toll.lng,
+        lat: toll.lat,
+      };
+    });
   }
 
   private hasFetchedTolls(route: RouteDocument) {

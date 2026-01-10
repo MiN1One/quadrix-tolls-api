@@ -1,6 +1,10 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
-import type { IAlternativeRoute, IRouteToll } from 'src/types/route.types';
+import type {
+  IAlternativeRoute,
+  IRouteToll,
+  ITollDetails,
+} from 'src/types/route.types';
 
 @Schema({ _id: false })
 export class Point {
@@ -9,6 +13,24 @@ export class Point {
 
   @Prop({ type: Number, required: true })
   lat: number;
+}
+
+@Schema({ _id: false })
+export class TollDetails implements ITollDetails {
+  @Prop({ type: String, required: true })
+  type: string;
+
+  @Prop({ type: Number, required: true })
+  lng: number;
+
+  @Prop({ type: Number, required: true })
+  lat: number;
+
+  @Prop({ type: Number, required: true })
+  price: number;
+
+  @Prop({ type: String, required: true })
+  currency: string;
 }
 
 @Schema({ _id: false })
@@ -24,6 +46,9 @@ export class Toll implements IRouteToll {
 
   @Prop({ type: String, required: true })
   currency: string;
+
+  @Prop({ type: [TollDetails] })
+  tolls: ITollDetails[];
 }
 
 @Schema({ _id: false })
