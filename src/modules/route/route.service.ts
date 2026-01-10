@@ -13,6 +13,7 @@ import {
   IAlternativeRoute,
   IFetchRouteResponse,
   IRoutePoint,
+  IRouteToll,
   ITollApiResponse,
   ITollDetails,
   TollType,
@@ -36,7 +37,7 @@ export class RouteService {
     private readonly config: ConfigType<typeof appConfig>,
   ) {}
 
-  async fetchRouteToll(polyline: string) {
+  async fetchRouteToll(polyline: string): Promise<IRouteToll | null> {
     try {
       const {
         data: { route },
@@ -65,6 +66,7 @@ export class RouteService {
         currency: route.costs.currency,
         totalToll,
         licensePlateToll,
+        isExpressLane: !!route.costs.expressLanes,
         fuelExpense: route.costs.fuel,
         tolls: this.mapRouteTollDetails(route.tolls),
       };

@@ -38,6 +38,9 @@ export class Toll implements IRouteToll {
   @Prop({ type: Number, default: null })
   totalToll: number | null;
 
+  @Prop({ type: Boolean, required: true })
+  isExpressLane: boolean;
+
   @Prop({ type: Number, default: null })
   licensePlateToll: number | null;
 

@@ -26,6 +26,7 @@ export interface IRouteToll {
   licensePlateToll: number | null;
   fuelExpense: number;
   currency: string;
+  isExpressLane: boolean;
   tolls: ITollDetails[];
 }
 
