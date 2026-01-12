@@ -1,8 +1,9 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import { Body, Controller, Param, Post } from '@nestjs/common';
+import type { EWebhookTopic, IWebhookData } from 'src/types/webhook.types';
 import { GetRouteDto } from './dto/get-route.dto';
 import { RouteService } from './route.service';
 
-@Controller('')
+@Controller()
 export class RouteController {
   constructor(private readonly routeService: RouteService) {}
 
@@ -10,5 +11,13 @@ export class RouteController {
   async getRoute(@Body() payload: GetRouteDto) {
     const routeData = await this.routeService.getRouteByPoints(payload);
     return routeData;
+  }
+
+  @Post('webhook/:topic')
+  async processWebhook(
+    @Body() payload: IWebhookData,
+    @Param('topic') topic: EWebhookTopic,
+  ) {
+    await this.routeService.processWebhook(topic, payload);
   }
 }

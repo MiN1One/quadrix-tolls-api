@@ -18,6 +18,7 @@ import {
   ITollDetails,
   TollType,
 } from 'src/types/route.types';
+import { EWebhookTopic, IWebhookData } from 'src/types/webhook.types';
 import { buildCanonicalRouteHash, normalizePoints } from 'src/utils/route';
 import { GetRouteDto } from './dto/get-route.dto';
 import { Route, RouteDocument } from './route.scheme';
@@ -37,6 +38,26 @@ export class RouteService {
     private readonly config: ConfigType<typeof appConfig>,
   ) {}
 
+  async processWebhook(
+    topic: EWebhookTopic,
+    { attributeId, points }: IWebhookData,
+  ) {
+    if (topic === EWebhookTopic.PostRoute) {
+      const data = await this.fetchGraphHopperRoute(points);
+      const route = await this.createRoute(attributeId, points, data);
+      await this.broadCastRouteData(route);
+    } else if (topic === EWebhookTopic.UpdateTolls) {
+      const route = await this.updateRouteTollsByAttributeId(attributeId);
+      await this.broadCastRouteData(route);
+    } else if (topic === EWebhookTopic.UpdateRoute) {
+      const route = await this.updateRouteWithTollsByAttributeId(
+        attributeId,
+        points,
+      );
+      await this.broadCastRouteData(route);
+    }
+  }
+
   async fetchRouteToll(polyline: string): Promise<IRouteToll | null> {
     try {
       const {
@@ -55,18 +76,16 @@ export class RouteService {
         },
       );
 
-      const totalToll =
-        route.costs.expressLanes?.tagCost || route.costs.prepaidCard || null;
-      const licensePlateToll =
-        route.costs.expressLanes?.licensePlateCost ||
-        route.costs.licensePlate ||
-        null;
+      const totalToll = route.costs.prepaidCard ?? 0;
+      const licensePlateToll = route.costs.licensePlate ?? 0;
 
       return {
         currency: route.costs.currency,
         totalToll,
         licensePlateToll,
-        isExpressLane: !!route.costs.expressLanes,
+        totalExpressToll: route.costs.expressLanes?.tagCost,
+        licensePlateExpressToll: route.costs.expressLanes?.licensePlateCost,
+        hasExpressLane: !!route.costs.expressLanes,
         fuelExpense: route.costs.fuel,
         tolls: this.mapRouteTollDetails(route.tolls),
       };
@@ -123,6 +142,26 @@ export class RouteService {
     );
   }
 
+  async updateRouteWithTollsByAttributeId(
+    attributeId: string,
+    points: IRoutePoint[],
+  ) {
+    const existingRoute = await this.routeModel.findOne({ attributeId });
+    if (existingRoute) {
+      existingRoute.points = points;
+      const routesData = await this.fetchGraphHopperRoute(points);
+      const routes = await this.getRouteDataWithToll(routesData);
+      existingRoute.routes = await Promise.all(
+        routes.map(async (r) => {
+          r.toll = await this.fetchRouteToll(r.polyline);
+          return r;
+        }),
+      );
+      await existingRoute.save();
+    }
+    return existingRoute!;
+  }
+
   async updateRouteTollsByAttributeId(attributeId: string) {
     const existingRoute = await this.routeModel.findOne({ attributeId });
     if (existingRoute) {
@@ -162,11 +201,20 @@ export class RouteService {
       };
     }
 
-    (async () => {
+    if (this.config.isDev) {
       const data = await this.fetchGraphHopperRoute(points);
       const route = await this.createRoute(attributeId, points, data);
-      await this.broadCastRouteData(route);
-    })();
+      return {
+        data: route,
+        attributeId,
+      };
+    } else {
+      (async () => {
+        const data = await this.fetchGraphHopperRoute(points);
+        const route = await this.createRoute(attributeId, points, data);
+        await this.broadCastRouteData(route);
+      })();
+    }
 
     return { attributeId, data: null };
   }
@@ -213,25 +261,40 @@ export class RouteService {
   private mapRouteTollDetails(tolls: TollType[]): ITollDetails[] {
     return tolls.flatMap<ITollDetails>((toll) => {
       const tollDetails = {
+        lng: 0,
+        lat: 0,
         type: toll.type,
         price: toll.tagCost || toll.prepaidCardCost || 0,
         currency: toll.currency,
-      };
+        isExpress: toll.isExpressLane,
+        isExit: false,
+        expressDirection: null,
+        priceLicensePlate: toll.licensePlateCost || 0,
+        name: '',
+      } as ITollDetails;
+
       if ('start' in toll && 'end' in toll) {
         return [
-          { ...tollDetails, lng: toll.start.lng, lat: toll.start.lat },
+          {
+            ...tollDetails,
+            lng: toll.start.lng,
+            name: toll.start.name,
+            lat: toll.start.lat,
+            expressDirection: 'entry',
+          },
           {
             ...tollDetails,
             lng: toll.end.lng,
+            name: toll.end.name,
             lat: toll.end.lat,
+            expressDirection: 'exit',
           },
-        ];
+        ] as ITollDetails[];
       }
-      return {
-        ...tollDetails,
-        lng: toll.lng,
-        lat: toll.lat,
-      };
+      tollDetails['lat'] = toll.lat;
+      tollDetails['lng'] = toll.lng;
+      tollDetails['name'] = toll.name;
+      return tollDetails;
     });
   }
 

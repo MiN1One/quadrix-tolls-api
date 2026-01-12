@@ -15,10 +15,14 @@ export interface IFetchRouteResponse {
 
 export interface ITollDetails {
   price: number;
+  priceLicensePlate: number;
   currency: string;
   lng: number;
+  name: string;
   lat: number;
+  isExpress: boolean;
   type: string;
+  expressDirection: 'exit' | 'entry' | null;
 }
 
 export interface IRouteToll {
@@ -26,8 +30,10 @@ export interface IRouteToll {
   licensePlateToll: number | null;
   fuelExpense: number;
   currency: string;
-  isExpressLane: boolean;
+  hasExpressLane: boolean;
   tolls: ITollDetails[];
+  totalExpressToll: number | null;
+  licensePlateExpressToll: number | null;
 }
 
 export interface IAlternativeRoute {
@@ -37,12 +43,18 @@ export interface IAlternativeRoute {
   distanceKilometers: number;
 }
 
+export interface IExpressTollPoint extends IRoutePoint {
+  name: string;
+}
+
 export interface ITicketSystemToll {
   type: 'ticketSystem1';
-  start: IRoutePoint;
-  end: IRoutePoint;
+  start: IExpressTollPoint;
+  end: IExpressTollPoint;
   prepaidCardCost: number | null;
   tagCost: number | null;
+  licensePlateCost: number | null;
+  isExpressLane?: boolean;
   currency: string;
 }
 
@@ -51,6 +63,9 @@ export interface IBarrierToll extends IRoutePoint {
   prepaidCardCost: number | null;
   currency: string;
   tagCost: number | null;
+  licensePlateCost: number | null;
+  name: string;
+  isExpressLane?: boolean;
 }
 
 export type TollType = ITicketSystemToll | IBarrierToll;

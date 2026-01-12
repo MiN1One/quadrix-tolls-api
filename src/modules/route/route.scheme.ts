@@ -29,8 +29,20 @@ export class TollDetails implements ITollDetails {
   @Prop({ type: Number, required: true })
   price: number;
 
+  @Prop({ type: Number, required: true })
+  priceLicensePlate: number;
+
   @Prop({ type: String, required: true })
   currency: string;
+
+  @Prop({ type: Boolean, default: false })
+  isExpress: boolean;
+
+  @Prop({ type: String, enum: ['exit', 'entry'], default: null })
+  expressDirection: 'exit' | 'entry' | null;
+
+  @Prop({ type: String, required: true })
+  name: string;
 }
 
 @Schema({ _id: false })
@@ -39,10 +51,16 @@ export class Toll implements IRouteToll {
   totalToll: number | null;
 
   @Prop({ type: Boolean, required: true })
-  isExpressLane: boolean;
+  hasExpressLane: boolean;
 
   @Prop({ type: Number, default: null })
   licensePlateToll: number | null;
+
+  @Prop({ type: Number, default: null })
+  licensePlateExpressToll: number | null;
+
+  @Prop({ type: Number, default: null })
+  totalExpressToll: number | null;
 
   @Prop({ type: Number, required: true })
   fuelExpense: number;
