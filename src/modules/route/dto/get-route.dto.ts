@@ -28,4 +28,8 @@ export class GetRouteDto {
   @IsString()
   @IsOptional()
   attributeId?: string;
+
+  @IsOptional()
+  @IsOptional()
+  includeTolls?: boolean;
 }

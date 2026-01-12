@@ -1,3 +1,5 @@
+import { RouteDocument } from 'src/modules/route/route.scheme';
+
 export interface IRoutePoint {
   lng: number;
   lat: number;
@@ -7,6 +9,11 @@ interface IRoutePath {
   distance: number;
   time: number;
   points: string;
+}
+
+export interface IGetRouteResponse {
+  attributeId: string;
+  data: null | RouteDocument;
 }
 
 export interface IFetchRouteResponse {

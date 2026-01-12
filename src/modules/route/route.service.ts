@@ -12,6 +12,7 @@ import { appConfig } from 'src/app.config';
 import {
   IAlternativeRoute,
   IFetchRouteResponse,
+  IGetRouteResponse,
   IRoutePoint,
   IRouteToll,
   ITollApiResponse,
@@ -180,11 +181,27 @@ export class RouteService {
     return await this.routeModel.findOne({ attributeId });
   }
 
-  async getRouteByPoints({ attributeId, points }: GetRouteDto) {
+  async getRouteByPoints({
+    attributeId,
+    points,
+    includeTolls,
+  }: GetRouteDto): Promise<IGetRouteResponse> {
     if (!attributeId) {
       const normalizedPoints = normalizePoints(points);
       attributeId = buildCanonicalRouteHash(normalizedPoints);
     }
+
+    if (!includeTolls) {
+      const data = this.mapRouteData(await this.fetchGraphHopperRoute(points));
+      return {
+        attributeId,
+        data: {
+          routes: data,
+          points,
+        } as RouteDocument,
+      };
+    }
+
     const existingRoute = await this.getRoutesByAttributeId(attributeId);
 
     if (existingRoute) {
@@ -296,6 +313,15 @@ export class RouteService {
       tollDetails['name'] = toll.name;
       return tollDetails;
     });
+  }
+
+  private mapRouteData(data: IFetchRouteResponse) {
+    return data.paths.map<IAlternativeRoute>((path) => ({
+      distanceKilometers: path.distance,
+      durationSeconds: path.time,
+      polyline: path.points,
+      toll: null,
+    }));
   }
 
   private hasFetchedTolls(route: RouteDocument) {
