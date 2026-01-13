@@ -7,7 +7,7 @@ export class Toll implements IToll {
   @Prop({ type: String, required: true })
   type: string;
 
-  @Prop({ type: String, required: true })
+  @Prop({ type: String, default: null })
   name: string;
 
   @Prop({ type: Number, required: true })
@@ -31,7 +31,7 @@ export class Toll implements IToll {
   @Prop({ type: String, default: null })
   expressDirection: 'exit' | 'entry' | null;
 
-  @Prop({ type: String, required: true })
+  @Prop({ type: String, default: null })
   road: string;
 
   @Prop({ type: Number, required: true, unique: true })

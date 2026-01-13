@@ -51,6 +51,7 @@ export interface IAlternativeRoute {
 export interface IExpressTollPoint extends IRoutePoint {
   name: string;
   id: number;
+  road: string;
 }
 
 export interface IAPIToll {
