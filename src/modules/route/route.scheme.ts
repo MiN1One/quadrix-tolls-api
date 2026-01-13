@@ -47,7 +47,7 @@ export class TollDetails implements ITollDetails {
 }
 
 @Schema({ _id: false })
-export class Toll implements IRouteToll {
+export class RouteToll implements IRouteToll {
   @Prop({ type: Number, default: null })
   totalToll: number | null;
 
@@ -93,7 +93,7 @@ export class AlternativeRoute implements IAlternativeRoute {
   })
   distanceKilometers: number;
 
-  @Prop({ type: Toll, default: null })
+  @Prop({ type: RouteToll, default: null })
   toll: IRouteToll | null;
 }
 

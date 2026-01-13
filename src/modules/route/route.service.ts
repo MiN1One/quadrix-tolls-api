@@ -1,32 +1,20 @@
-import {
-  BadRequestException,
-  Inject,
-  Injectable,
-  Logger,
-} from '@nestjs/common';
-import type { ConfigType } from '@nestjs/config';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import axios from 'axios';
 import { Model } from 'mongoose';
-import { appConfig } from 'src/app.config';
 import {
   IAlternativeRoute,
   IFetchRouteResponse,
   IGetRouteResponse,
   IRoutePoint,
   IRouteReturnData,
-  IRouteToll,
-  ITollApiResponse,
-  ITollDetails,
-  TollType,
 } from 'src/types/route.types';
 import { EWebhookTopic, IWebhookData } from 'src/types/webhook.types';
 import { buildCanonicalRouteHash, normalizePoints } from 'src/utils/route';
+import { TollService } from '../toll/toll.service';
 import { GetRouteDto } from './dto/get-route.dto';
 import { Route, RouteDocument } from './route.scheme';
 
-const TOLL_API =
-  'https://apis.tollguru.com/toll/v2/complete-polyline-from-mapping-service';
 const ROUTE_API = 'https://route.ataxi.uz/graphhopper/route';
 const BROADCAST_API = 'https://ws.quadrix.ai/broadcast/route-calculated';
 
@@ -36,8 +24,7 @@ export class RouteService {
     @InjectModel(Route.name)
     private readonly routeModel: Model<RouteDocument>,
 
-    @Inject(appConfig.KEY)
-    private readonly config: ConfigType<typeof appConfig>,
+    private readonly tollService: TollService,
   ) {}
 
   async processWebhook(
@@ -60,51 +47,11 @@ export class RouteService {
     }
   }
 
-  async fetchRouteToll(polyline: string): Promise<IRouteToll | null> {
-    try {
-      const {
-        data: { route },
-      } = await axios.post<ITollApiResponse>(
-        TOLL_API,
-        {
-          mapProvider: 'custom',
-          polyline,
-          vehicle: { type: '5AxlesTruck' },
-        },
-        {
-          headers: {
-            'x-api-key': this.config.tollGuruApiKey,
-          },
-        },
-      );
-
-      const totalToll = route.costs.prepaidCard ?? 0;
-      const licensePlateToll = route.costs.licensePlate ?? 0;
-
-      return {
-        currency: route.costs.currency,
-        totalToll,
-        licensePlateToll,
-        totalExpressToll: route.costs.expressLanes?.tagCost,
-        licensePlateExpressToll: route.costs.expressLanes?.licensePlateCost,
-        hasExpressLane: !!route.costs.expressLanes,
-        fuelExpense: route.costs.fuel,
-        tolls: this.mapRouteTollDetails(route.tolls),
-      };
-    } catch (error) {
-      if (axios.isAxiosError(error)) {
-        Logger.error(error.response?.data, 'RouteService.fetchRouteToll');
-      } else {
-        Logger.error(error, 'RouteService.fetchRouteToll');
-      }
-      return null;
-    }
-  }
-
   async getRouteDataWithToll(data: IFetchRouteResponse) {
     const routesResult = await Promise.allSettled(
       data.paths.map<Promise<IAlternativeRoute>>(async (path) => {
-        const toll = await this.fetchRouteToll(path.points);
+        const toll = await this.tollService.fetchRouteToll(path.points);
+
         const route: IAlternativeRoute = {
           distanceKilometers: path.distance,
           durationSeconds: path.time,
@@ -155,7 +102,7 @@ export class RouteService {
       const routes = await this.getRouteDataWithToll(routesData);
       existingRoute.routes = await Promise.all(
         routes.map(async (r) => {
-          r.toll = await this.fetchRouteToll(r.polyline);
+          r.toll = await this.tollService.fetchRouteToll(r.polyline);
           return r;
         }),
       );
@@ -169,7 +116,7 @@ export class RouteService {
     if (existingRoute) {
       existingRoute.routes = await Promise.all(
         existingRoute.routes.map(async (r) => {
-          r.toll = await this.fetchRouteToll(r.polyline);
+          r.toll = await this.tollService.fetchRouteToll(r.polyline);
           return r;
         }),
       );
@@ -261,46 +208,6 @@ export class RouteService {
         JSON.stringify(er),
       );
     }
-  }
-
-  private mapRouteTollDetails(tolls: TollType[]): ITollDetails[] {
-    return tolls.flatMap<ITollDetails>((toll) => {
-      const tollDetails = {
-        lng: 0,
-        lat: 0,
-        type: toll.type,
-        price: toll.tagCost || toll.prepaidCardCost || 0,
-        currency: toll.currency,
-        isExpress: toll.isExpressLane,
-        isExit: false,
-        expressDirection: null,
-        priceLicensePlate: toll.licensePlateCost || 0,
-        name: '',
-      } as ITollDetails;
-
-      if ('start' in toll && 'end' in toll) {
-        return [
-          {
-            ...tollDetails,
-            lng: toll.start.lng,
-            name: toll.start.name,
-            lat: toll.start.lat,
-            expressDirection: 'entry',
-          },
-          {
-            ...tollDetails,
-            lng: toll.end.lng,
-            name: toll.end.name,
-            lat: toll.end.lat,
-            expressDirection: 'exit',
-          },
-        ] as ITollDetails[];
-      }
-      tollDetails['lat'] = toll.lat;
-      tollDetails['lng'] = toll.lng;
-      tollDetails['name'] = toll.name;
-      return tollDetails;
-    });
   }
 
   private mapRouteData(data: IFetchRouteResponse) {

@@ -50,27 +50,30 @@ export interface IAlternativeRoute {
 
 export interface IExpressTollPoint extends IRoutePoint {
   name: string;
+  id: number;
 }
 
-export interface ITicketSystemToll {
+export interface IAPIToll {
+  prepaidCardCost: number | null;
+  licensePlateCost: number | null;
+  tagCost: number | null;
+  isExpressLane?: boolean;
+  currency: string;
+  tagPrimaryNames: string[];
+  id: number;
+  licensePlateNames: string[];
+  name: string;
+  road: string;
+}
+
+export interface ITicketSystemToll extends IAPIToll {
   type: 'ticketSystem1';
   start: IExpressTollPoint;
   end: IExpressTollPoint;
-  prepaidCardCost: number | null;
-  tagCost: number | null;
-  licensePlateCost: number | null;
-  isExpressLane?: boolean;
-  currency: string;
 }
 
-export interface IBarrierToll extends IRoutePoint {
+export interface IBarrierToll extends IRoutePoint, IAPIToll {
   type: 'barrier';
-  prepaidCardCost: number | null;
-  currency: string;
-  tagCost: number | null;
-  licensePlateCost: number | null;
-  name: string;
-  isExpressLane?: boolean;
 }
 
 export type TollType = ITicketSystemToll | IBarrierToll;
