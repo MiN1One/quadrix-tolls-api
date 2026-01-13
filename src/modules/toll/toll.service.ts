@@ -105,6 +105,7 @@ export class TollService {
             lat: toll.start.lat,
             name: toll.start.name || '',
             id: toll.start.id,
+            road: toll.start.road,
           },
           {
             ...tollData,
@@ -112,6 +113,7 @@ export class TollService {
             lat: toll.end.lat,
             name: toll.end.name || '',
             id: toll.end.id,
+            road: toll.end.road,
           },
         ];
       }
