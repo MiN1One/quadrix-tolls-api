@@ -2,6 +2,7 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
 import type {
   IAlternativeRoute,
+  IRouteReturnData,
   IRouteToll,
   ITollDetails,
 } from 'src/types/route.types';
@@ -97,7 +98,7 @@ export class AlternativeRoute implements IAlternativeRoute {
 }
 
 @Schema({ timestamps: true })
-export class Route {
+export class Route implements IRouteReturnData {
   @Prop({
     type: [Point],
     required: true,
@@ -122,8 +123,8 @@ export class Route {
   })
   routes: AlternativeRoute[];
 
-  createdAt: string;
-  updatedAt: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export type RouteDocument = Route & Document;

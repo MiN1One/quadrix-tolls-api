@@ -9,8 +9,7 @@ export class RouteController {
 
   @Post()
   async getRoute(@Body() payload: GetRouteDto) {
-    const routeData = await this.routeService.getRouteByPoints(payload);
-    return routeData;
+    return await this.routeService.getRouteByPoints(payload);
   }
 
   @Post('webhook/:topic')

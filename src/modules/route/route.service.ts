@@ -14,6 +14,7 @@ import {
   IFetchRouteResponse,
   IGetRouteResponse,
   IRoutePoint,
+  IRouteReturnData,
   IRouteToll,
   ITollApiResponse,
   ITollDetails,
@@ -191,15 +192,16 @@ export class RouteService {
       attributeId = buildCanonicalRouteHash(normalizedPoints);
     }
 
+    const routeData = await this.fetchGraphHopperRoute(points);
+    const mappedRouteData = this.mapRouteData(routeData);
+    const returnData: IRouteReturnData = {
+      routes: mappedRouteData,
+      points,
+      attributeId,
+    };
+
     if (!includeTolls) {
-      const data = this.mapRouteData(await this.fetchGraphHopperRoute(points));
-      return {
-        attributeId,
-        data: {
-          routes: data,
-          points,
-        } as RouteDocument,
-      };
+      return { attributeId, data: returnData };
     }
 
     const existingRoute = await this.getRoutesByAttributeId(attributeId);
@@ -210,30 +212,16 @@ export class RouteService {
           const route = await this.updateRouteTollsByAttributeId(attributeId);
           await this.broadCastRouteData(route);
         })();
-        return { attributeId, data: null };
       }
-      return {
-        data: existingRoute,
-        attributeId,
-      };
+      return { data: existingRoute, attributeId };
     }
 
-    if (this.config.isDev) {
-      const data = await this.fetchGraphHopperRoute(points);
-      const route = await this.createRoute(attributeId, points, data);
-      return {
-        data: route,
-        attributeId,
-      };
-    } else {
-      (async () => {
-        const data = await this.fetchGraphHopperRoute(points);
-        const route = await this.createRoute(attributeId, points, data);
-        await this.broadCastRouteData(route);
-      })();
-    }
+    (async () => {
+      const route = await this.createRoute(attributeId, points, routeData);
+      await this.broadCastRouteData(route);
+    })();
 
-    return { attributeId, data: null };
+    return { attributeId, data: returnData };
   }
 
   async broadCastRouteData(route: RouteDocument) {

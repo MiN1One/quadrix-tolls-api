@@ -1,5 +1,3 @@
-import { RouteDocument } from 'src/modules/route/route.scheme';
-
 export interface IRoutePoint {
   lng: number;
   lat: number;
@@ -13,7 +11,7 @@ interface IRoutePath {
 
 export interface IGetRouteResponse {
   attributeId: string;
-  data: null | RouteDocument;
+  data: null | IRouteReturnData;
 }
 
 export interface IFetchRouteResponse {
@@ -76,6 +74,12 @@ export interface IBarrierToll extends IRoutePoint {
 }
 
 export type TollType = ITicketSystemToll | IBarrierToll;
+
+export interface IRouteReturnData {
+  attributeId: string;
+  points: IRoutePoint[];
+  routes: IAlternativeRoute[];
+}
 
 export interface ITollApiResponse {
   route: {
