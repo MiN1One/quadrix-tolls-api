@@ -1,5 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
+import mongoosePaginate from 'mongoose-paginate-v2';
 import { IToll } from 'src/types/toll.types';
 
 @Schema({ timestamps: true })
@@ -46,3 +47,5 @@ export class Toll implements IToll {
 
 export type TollDocument = Toll & Document;
 export const TollSchema = SchemaFactory.createForClass(Toll);
+
+TollSchema.plugin(mongoosePaginate);

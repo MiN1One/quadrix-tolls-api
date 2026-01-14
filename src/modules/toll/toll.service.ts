@@ -2,8 +2,11 @@ import { Inject, Injectable, Logger } from '@nestjs/common';
 import type { ConfigType } from '@nestjs/config';
 import { InjectModel } from '@nestjs/mongoose';
 import axios from 'axios';
-import { Model, QueryFilter } from 'mongoose';
+import type { PaginateModel } from 'mongoose';
+import { QueryFilter } from 'mongoose';
 import { appConfig } from 'src/app.config';
+import { pageQueryDefaults } from 'src/config/query.config';
+import { IPaginationQuery } from 'src/types/common.types';
 import { IRouteToll, ITollApiResponse, TollType } from 'src/types/route.types';
 import { IToll } from 'src/types/toll.types';
 import { Toll, TollDocument } from './toll.schema';
@@ -15,14 +18,21 @@ const TOLL_API =
 export class TollService {
   constructor(
     @InjectModel(Toll.name)
-    private readonly tollModel: Model<TollDocument>,
+    private readonly tollModel: PaginateModel<TollDocument>,
 
     @Inject(appConfig.KEY)
     private readonly config: ConfigType<typeof appConfig>,
   ) {}
 
-  async getTolls(filters: QueryFilter<TollDocument> = {}) {
-    return await this.tollModel.find(filters).exec();
+  async getTolls({
+    page,
+    limit,
+    ...filters
+  }: QueryFilter<TollDocument> & IPaginationQuery) {
+    return await this.tollModel.paginate(filters, {
+      page: page || pageQueryDefaults.page,
+      limit: limit || pageQueryDefaults.limit,
+    });
   }
 
   async fetchRouteToll(polyline: string): Promise<IRouteToll | null> {
