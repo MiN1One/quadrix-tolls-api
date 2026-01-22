@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import axios from 'axios';
+import axios, { isAxiosError } from 'axios';
 import { Model } from 'mongoose';
 import {
   IAlternativeRoute,
@@ -44,6 +44,8 @@ export class RouteService {
         points,
       );
       await this.broadCastRouteData(route);
+    } else {
+      throw new BadRequestException('Invalid webhook topic');
     }
   }
 
@@ -202,11 +204,13 @@ export class RouteService {
       });
       return data as IFetchRouteResponse;
     } catch (er) {
-      Logger.error(er, 'RouteService.fetchGraphhopperRoute');
-      throw new BadRequestException(
-        'Route cannot be retrieved',
-        JSON.stringify(er),
-      );
+      let errorMessage = 'Route cannot be retrieved';
+      if (isAxiosError(er)) {
+        errorMessage = `Graphhopper error: ${er.response?.data?.message || er.message}`;
+      } else {
+        Logger.error(er, 'RouteService.fetchGraphhopperRoute');
+      }
+      throw new BadRequestException(errorMessage);
     }
   }
 

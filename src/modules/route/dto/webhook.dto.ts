@@ -2,34 +2,20 @@ import { Type } from 'class-transformer';
 import {
   ArrayMinSize,
   IsArray,
-  IsLatitude,
-  IsLongitude,
-  IsOptional,
   IsString,
   ValidateNested,
 } from 'class-validator';
 import { IRoutePoint } from 'src/types/route.types';
+import { IWebhookData } from 'src/types/webhook.types';
+import { RoutePointDto } from './get-route.dto';
 
-export class RoutePointDto implements IRoutePoint {
-  @IsLongitude()
-  lng: number;
+export class WebhookDataDto implements IWebhookData {
+  @IsString()
+  attributeId: string;
 
-  @IsLatitude()
-  lat: number;
-}
-
-export class GetRouteDto {
   @IsArray()
   @ValidateNested({ each: true })
   @ArrayMinSize(2)
   @Type(() => RoutePointDto)
   points: IRoutePoint[];
-
-  @IsString()
-  @IsOptional()
-  attributeId?: string;
-
-  @IsOptional()
-  @IsOptional()
-  includeTolls?: boolean;
 }
