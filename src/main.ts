@@ -4,7 +4,7 @@ import { NestFactory } from '@nestjs/core';
 import { appConfig } from './app.config';
 import { AppModule } from './app.module';
 
-const allowedOrigins = ['https://app.quadrix.ai', 'http://localhost:5173'];
+const allowedOrigins = ['https://app.quadrix.ai', 'http://localhost:5173', 'https://staging.quadrix.ai'];
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
