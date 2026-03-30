@@ -141,10 +141,10 @@ export class RouteService {
       attributeId = buildCanonicalRouteHash(normalizedPoints);
     }
 
-    const routeData = await this.fetchGraphHopperRoute(points);
-    const mappedRouteData = this.mapRouteData(routeData);
+    const existingRoute = await this.getRoutesByAttributeId(attributeId);
+
     const returnData: IRouteReturnData = {
-      routes: mappedRouteData,
+      routes: existingRoute ? existingRoute.routes : [],
       points,
       attributeId,
     };
@@ -152,8 +152,6 @@ export class RouteService {
     if (!includeTolls) {
       return { attributeId, data: returnData };
     }
-
-    const existingRoute = await this.getRoutesByAttributeId(attributeId);
 
     if (existingRoute) {
       if (!this.hasFetchedTolls(existingRoute)) {
@@ -166,6 +164,7 @@ export class RouteService {
     }
 
     (async () => {
+      const routeData = await this.fetchGraphHopperRoute(points);
       const route = await this.createRoute(attributeId, points, routeData);
       await this.broadCastRouteData(route);
     })();
