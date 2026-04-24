@@ -15,7 +15,7 @@ import { TollService } from '../toll/toll.service';
 import { GetRouteDto } from './dto/get-route.dto';
 import { Route, RouteDocument } from './route.scheme';
 
-const ROUTE_API = 'https://route.ataxi.uz/graphhopper/route';
+const ROUTE_API = 'https://route.ataxi.uz/route';
 const BROADCAST_API = 'https://ws.quadrix.ai/broadcast/route-calculated';
 
 @Injectable()
