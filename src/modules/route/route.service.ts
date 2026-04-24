@@ -194,7 +194,7 @@ export class RouteService {
           : {};
       const { data } = await axios(url, {
         params: {
-          profile: 'truck',
+          profile: 'semi_truck',
           height: 4.1,
           width: 2.6,
           weight: 40,
